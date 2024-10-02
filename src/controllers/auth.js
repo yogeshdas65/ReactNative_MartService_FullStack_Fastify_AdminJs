@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { Customer, DeliveryPartner } from "../models/user.js";
 
 const generateTokens = (user) => {
+  console.log(user)
   const accessToken = jwt.sign(
     { userId: user._id, role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
@@ -13,7 +14,7 @@ const generateTokens = (user) => {
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "2d" }
   );
-
+   console.log(accessToken, refreshToken)
   return { accessToken, refreshToken }; // Return both tokens as an object
 };
 
@@ -60,7 +61,7 @@ export const loginDeliveryPartner = async (req, reply) => {
 
     const { accessToken, refreshToken } = generateTokens(deliveryPartner);
     return reply.send({
-      message: customer ? "Login Successful" : "Customer created and logged in",
+      message: deliveryPartner ? "Login Successful" : "Customer created and logged in",
       accessToken,
       refreshToken,
       deliveryPartner,
@@ -103,10 +104,12 @@ export const refreshToken = async (req, reply) => {
 };
 
 export const fetchUser = async (req, reply) => {
-    try {
+  const { userId, role } = req.user; 
+  console.log("fetchUser", userId, role)
+  try {
+    console.log(req.user)
         const { userId, role } = req.user;  // Destructure userId and role from req.user
         let user;
-
         if (role === "Customer") {
             user = await Customer.findById(userId);
         } else if (role === "DeliveryPartner") {
@@ -114,13 +117,10 @@ export const fetchUser = async (req, reply) => {
         } else {
             return reply.status(403).send({ message: "Invalid Role" });
         }
-
         if (!user) {
             return reply.status(404).send({ message: "User not found" });
         }
-
         return reply.send({ message: "User fetched successfully", user });
-
     } catch (error) {
         return reply.status(500).send({ message: "An error occurred", error });
     }
