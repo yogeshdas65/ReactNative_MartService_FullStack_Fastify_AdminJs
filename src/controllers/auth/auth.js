@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Customer, DeliveryPartner } from "../models/user.js";
+import { Customer, DeliveryPartner } from "../../models/user.js";
 
 const generateTokens = (user) => {
   console.log(user)
@@ -125,4 +125,6 @@ export const fetchUser = async (req, reply) => {
         return reply.status(500).send({ message: "An error occurred", error });
     }
 };
+
+
 
