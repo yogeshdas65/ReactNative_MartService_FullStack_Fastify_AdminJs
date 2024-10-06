@@ -16,7 +16,8 @@ export const verifyToken = (req, reply, done) => {
         // Set req.user and signal Fastify to continue
         req.user = decoded;
         // Return here to pass control to the next handler
-        done()
+        // done()
+        return true
     } catch (err) {
         console.error("Token verification failed:", err.message);
         return reply.status(403).send({ message: "Invalid or expired token" });

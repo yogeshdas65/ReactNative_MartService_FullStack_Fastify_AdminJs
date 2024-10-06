@@ -1,7 +1,6 @@
 import Order from "../../models/order.js";
 import Branch from "../../models/branch.js";
 import { Customer } from "../../models/user.js";
-import Order from "../../models/order.js";
 import { DeliveryPartner } from "../../models/user.js";
 
 export const createOrder = async (req, reply) => {
@@ -34,8 +33,8 @@ export const createOrder = async (req, reply) => {
         address: customerData.address || "No address available",
       },
       pickupLocation: {
-        latitude: branchData.liveLocation.latitude,
-        longitude: branchData.liveLocation.longitude,
+        latitude: branchData.location.latitude,
+        longitude: branchData.location.longitude,
         address: branchData.address || "No address available",
       },
     });
@@ -76,6 +75,8 @@ export const confirmOrder = async (req, reply) => {
       longitude: deliveryPersonLocation?.longitude,
       address: deliveryPersonLocation?.address || "No address available",
     };
+
+    req.server.io.to(orderId).emit("orderConfirmed", order)
     await order.save();
     return reply.send(order);
   } catch (error) {
@@ -118,3 +119,46 @@ export const updateOrderStatus = async (req, reply) => {
       .send({ message: "Failed to update order status", error });
   }
 };
+
+export const getOrders = async (req, reply) => {
+  try {
+    const { status, customerId, deliveryPartnerId, branchId } = req.query;
+
+    let query = {};
+
+    if (status) {
+      query.status = status;
+    }
+    if (customerId) {
+      query.customer = customerId;
+    }
+    if (deliveryPartnerId) {
+      query.branch = branchId;
+      query.deliveryPartner = deliveryPartnerId;
+    }
+    const orders = await Order.find(query).populate(
+      "customer branch items.item deliveryPartner"
+    );
+    reply.send(orders);
+  } catch (error) {
+    reply.status(500).send({ message: "failed to retrieve the orders", error });
+  }
+};
+
+export const getOrderById = async (req, reply) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate(
+      "customer branch items.item deliveryPartner"
+    );
+    if (!order) {
+      return reply.status(404).send({ message: "Order not found" });
+    }
+    return reply.send(order);
+  } catch (error) {
+    return reply
+      .status(500)
+      .send({ message: "Failed to retrieve the order", error });
+  }
+};
+
